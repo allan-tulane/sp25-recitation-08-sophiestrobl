@@ -2,40 +2,63 @@ from collections import deque
 from heapq import heappush, heappop 
 
 def shortest_shortest_path(graph, source):
-  pq = [(0, 0, source)]  # (total_weight, num_edges, node)
-  visited = {}
+    """
+    Params: 
+      graph.....a graph represented as a dict where each key is a vertex
+                and the value is a set of (vertex, weight) tuples (as in the test case)
+      source....the source node
 
-  while pq:
-      weight, edges, node = heappop(pq)
+    Returns:
+      a dict where each key is a vertex and the value is a tuple of
+      (shortest path weight, shortest path number of edges). See test case for example.
+    """
+    def shortest_path_helper(visited, front):
+        if len(front) == 0:
+            return visited
 
-      if node in visited:
-          prev_weight, prev_edges = visited[node]
-          if weight > prev_weight or (weight == prev_weight and edges >= prev_edges):
-              continue
+        else:
+            weighted_distance, edges, node = heappop(front)
+            if node in visited:
+                return shortest_path_helper(visited, front)
+            else:
+                visited[node] = (weighted_distance, edges)
+                for neighbor, weight in graph[node]:
+                    heappush(front, (weighted_distance + weight, edges + 1, neighbor))
+                return shortest_path_helper(visited, front)
 
-      visited[node] = (weight, edges)
+    front = []
+    heappush(front, (0, 0, source))
+    visited = dict()
+    return shortest_path_helper(visited, front)
 
-      for neighbor, w in graph.get(node, []):
-          new_weight = weight + w
-          new_edges = edges + 1
-          heappush(pq, (new_weight, new_edges, neighbor))
 
-  return visited
 
-    
-    
+
+
+
 def bfs_path(graph, source):
-  parents = {source: None}
-  queue = deque([source])
+    """
+    Returns:
+      a dict where each key is a vertex and the value is the parent of 
+      that vertex in the shortest path tree.
+    """
+    visited = set()
+    front = deque([source])
+    parent = {}
+    visited.add(source)
 
-  while queue:
-      current = queue.popleft()
-      for neighbor in graph.get(current, []):
-          if neighbor not in parents:
-              parents[neighbor] = current
-              queue.append(neighbor)
+    while front:
+        node = front.popleft()
+        for i in graph[node]:
+            if i not in visited:
+                visited.add(i)
+                parent[i] = node
+                front.append(i)
+    return parent
 
-  return parents
+
+
+
 
 def get_sample_graph():
      return {'s': {'a', 'b'},
@@ -46,14 +69,22 @@ def get_sample_graph():
             }
 
 
-    
+
 def get_path(parents, destination):
-  path = []
-  current = destination
-  while current is not None:
-      path.append(current)
-      current = parents.get(current)
-  path.reverse()
-  return ''.join(path[:-1])
+    """
+    Returns:
+      The shortest path from the source node to this destination node 
+      (excluding the destination node itself). See test_get_path for an example.
+    """
+    path = []
+    while destination in parents:
+        parent = parents[destination]
+        path.append(parent)
+        destination = parent
+    return ''.join(reversed(path))
 
 
+graph = get_sample_graph()
+parents = bfs_path(graph, 's')
+paths = get_path(parents, 'd')
+print(paths)
